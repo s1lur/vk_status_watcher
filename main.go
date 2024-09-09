@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"os/signal"
 	"context"
 	"syscall"
@@ -9,6 +10,14 @@ import (
 )
 
 func main() {
+	fileName := "watcher.log"
+	logFile, err := os.OpenFile(fileName, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
 	ctx, stop := signal.NotifyContext(context.Background(),
 		syscall.SIGHUP,
 		syscall.SIGINT,
