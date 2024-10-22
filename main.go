@@ -28,13 +28,13 @@ func main() {
 		panic(err)
 	}
 	newStatusChan := make(chan string)
-	err = launchPoller(ctx, cfg.AccountID, cfg.VKToken, cfg.PollingInterval, newStatusChan)
+	initStatus, err := launchPoller(ctx, cfg.AccountID, cfg.VKToken, cfg.PollingInterval, newStatusChan)
 	if err != nil {
 		stop()
 		time.Sleep(2 * time.Second)
 		return
 	}
-	err = launchNotifier(ctx, cfg.ChatID, cfg.TGToken, newStatusChan)
+	err = launchNotifier(ctx, cfg.ChatID, cfg.TGToken, initStatus, newStatusChan)
 	if err != nil {
 		stop()
 		time.Sleep(2 * time.Second)

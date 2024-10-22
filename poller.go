@@ -41,7 +41,7 @@ func requestStatus(client *http.Client, req *http.Request) (string, error) {
 	return unm.Response[0].Status, nil
 }
 
-func launchPoller(ctx context.Context, accId int, vkToken string, pollingInterval time.Duration, newStatusChan chan<- string) error {
+func launchPoller(ctx context.Context, accId int, vkToken string, pollingInterval time.Duration, newStatusChan chan<- string) (string, error) {
 	client := &http.Client{}
 	u := &url.URL{
 		Scheme: "https",
@@ -55,12 +55,12 @@ func launchPoller(ctx context.Context, accId int, vkToken string, pollingInterva
 	u.RawQuery = q.Encode()
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", vkToken))
 	status, err := requestStatus(client, req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Printf("successfully initialized poller with status: %s\n", status)
 	go func() {
@@ -71,18 +71,17 @@ func launchPoller(ctx context.Context, accId int, vkToken string, pollingInterva
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				newStatus, err := requestStatus(client, req)
-				if err != nil {
-					log.Print(err)
-					continue
-				}
-				if status != newStatus {
-					status = newStatus
-					newStatusChan<- status
-				}
-
+			}
+			newStatus, err := requestStatus(client, req)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			if status != newStatus {
+				status = newStatus
+				newStatusChan<- status
 			}
 		}
 	}()
-	return nil
+	return status, nil
 }
